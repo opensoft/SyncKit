@@ -1,0 +1,11 @@
+# WSL-OneDrive Sync Configuration
+
+# WSL Projects Directory (where you work)
+WSL_PROJECTS_DIR="/home/brett/projects"
+
+# OneDrive WSL Directory (backup location)
+ONEDRIVE_WSL_DIR="/mnt/c/Users/$USER/OneDrive - Opensoft Inc/projects/wsl"
+
+# Tracking files
+LAST_SYNC_FILE="/home/brett/.local/share/wsl-sync/.last_sync_time"
+LOG_FILE="/home/brett/.local/share/wsl-sync/logs/sync.log"

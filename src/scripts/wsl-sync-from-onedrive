@@ -1,0 +1,41 @@
+#!/bin/bash
+
+# Sync FROM OneDrive TO WSL
+# Use this when you get home or switch machines
+
+# Source configuration
+CONFIG_FILE=""
+if [ -f "/etc/wsl-sync/config" ]; then
+    CONFIG_FILE="/etc/wsl-sync/config"
+elif [ -f "$HOME/.config/wsl-sync/config" ]; then
+    CONFIG_FILE="$HOME/.config/wsl-sync/config"
+else
+    echo "Error: Configuration file not found"
+    exit 1
+fi
+
+source "$CONFIG_FILE"
+
+# Function to log messages with timestamp
+log_message() {
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" | tee -a "$LOG_FILE"
+}
+
+log_message "Starting sync: OneDrive → WSL"
+
+# Create WSL projects directory if it doesn't exist
+mkdir -p "$WSL_PROJECTS_DIR"
+
+# Use rsync to sync efficiently
+if rsync -av --delete "$ONEDRIVE_WSL_DIR/" "$WSL_PROJECTS_DIR/"; then
+    log_message "✅ Sync from OneDrive completed successfully"
+    
+    # Update the sync timestamp so smart-sync doesn't immediately sync back
+    touch "$LAST_SYNC_FILE"
+    
+    log_message "📁 Projects available in $WSL_PROJECTS_DIR"
+    ls -la "$WSL_PROJECTS_DIR/"
+else
+    log_message "❌ Sync from OneDrive failed - check permissions and paths"
+    exit 1
+fi
