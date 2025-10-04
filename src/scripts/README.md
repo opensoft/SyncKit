@@ -114,6 +114,7 @@ WSL_PROJECTS_DIR="$HOME/projects"
 ONEDRIVE_WSL_DIR="/mnt/c/Users/$USER/OneDrive - [Company]/projects/wsl"
 
 # Sync frequency: Every 10 minutes via cron
+# Note: Cron job includes PATH environment fix for reliability
 ```
 
 ## 📊 Monitoring
@@ -190,6 +191,20 @@ echo $PATH | grep -o ~/.local/bin
 
 # Source shell config if needed  
 source ~/.bashrc  # or ~/.zshrc
+```
+
+**Cron Environment Issues?**
+```bash
+# Cron has minimal environment - check if PATH is set properly
+crontab -l | grep PATH
+
+# Should show: PATH=/usr/local/bin:/usr/bin:/bin
+# If missing, the installer should have fixed this automatically
+
+# Manual cron job fix (if needed):
+# crontab -e
+# Add: PATH=/usr/local/bin:/usr/bin:/bin
+# Before the sync job line
 ```
 
 ## 📝 License

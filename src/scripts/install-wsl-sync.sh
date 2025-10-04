@@ -231,16 +231,21 @@ EOF
 setup_cron() {
     print_info "Setting up automatic sync..."
     
-    # Add cron job for current user
-    CRON_COMMAND="*/10 * * * * $BIN_DIR/wsl-smart-sync"
+    # Add cron job for current user with proper PATH environment
+    # This fixes the issue where cron jobs fail due to missing PATH variables
+    CRON_COMMAND="*/10 * * * * PATH=/usr/local/bin:/usr/bin:/bin $BIN_DIR/wsl-smart-sync"
     
     # Check if cron job already exists
     if crontab -l 2>/dev/null | grep -q "wsl-smart-sync"; then
-        print_warning "Cron job already exists, skipping..."
+        print_warning "Cron job already exists, updating with proper PATH..."
+        # Remove old cron job and add new one with PATH
+        crontab -l 2>/dev/null | grep -v "wsl-smart-sync" | crontab -
+        (crontab -l 2>/dev/null; echo "$CRON_COMMAND") | crontab -
+        print_success "Cron job updated with proper PATH environment"
     else
         # Add to existing crontab or create new one
         (crontab -l 2>/dev/null; echo "$CRON_COMMAND") | crontab -
-        print_success "Cron job added - will run every 10 minutes"
+        print_success "Cron job added - will run every 10 minutes with proper PATH"
     fi
 }
 
