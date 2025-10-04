@@ -93,8 +93,8 @@ install_scripts() {
     
     # Install the bidirectional sync script as wsl-smart-sync
     if [ -f "$SCRIPT_DIR/wsl-bidirectional-sync.sh" ]; then
-        print_info "Installing bidirectional sync as wsl-smart-sync..."
-        cp "$SCRIPT_DIR/wsl-bidirectional-sync.sh" "$BIN_DIR/wsl-smart-sync"
+        print_info "Installing bidirectional sync as wsl-sync-to-onedrive..."
+        cp "$SCRIPT_DIR/wsl-bidirectional-sync.sh" "$BIN_DIR/wsl-sync-to-onedrive"
         
         # Update the log file paths to use consistent naming
         sed -i "s|WSL_SYNC_MARKER=.*|WSL_SYNC_MARKER=\"$DATA_DIR/.last_wsl_sync\"|g" "$BIN_DIR/wsl-smart-sync"
@@ -115,11 +115,11 @@ install_scripts() {
     fi
     
     # Make scripts executable
-    chmod +x "$BIN_DIR/wsl-smart-sync"
+    chmod +x "$BIN_DIR/wsl-sync-to-onedrive"
     chmod +x "$BIN_DIR/wsl-sync-from-onedrive"
     
     print_success "Scripts installed to $BIN_DIR"
-    print_info "wsl-smart-sync: Advanced bidirectional sync with conflict resolution"
+    print_info "wsl-sync-to-onedrive: Advanced bidirectional sync with conflict resolution"
     print_info "wsl-sync-from-onedrive: Manual OneDrive → WSL sync"
 }
 
@@ -155,13 +155,13 @@ setup_cron() {
     
     # Add cron job for current user with proper PATH environment
     # This fixes the issue where cron jobs fail due to missing PATH variables
-    CRON_COMMAND="*/5 * * * * PATH=/usr/local/bin:/usr/bin:/bin $BIN_DIR/wsl-smart-sync"
+    CRON_COMMAND="*/5 * * * * PATH=/usr/local/bin:/usr/bin:/bin $BIN_DIR/wsl-sync-to-onedrive"
     
     # Check if cron job already exists
-    if crontab -l 2>/dev/null | grep -q "wsl-smart-sync"; then
+    if crontab -l 2>/dev/null | grep -q "wsl-sync-to-onedrive"; then
         print_warning "Cron job already exists, updating with proper PATH..."
         # Remove old cron job and add new one with PATH
-        crontab -l 2>/dev/null | grep -v "wsl-smart-sync" | crontab -
+        crontab -l 2>/dev/null | grep -v "wsl-sync-to-onedrive" | crontab -
         (crontab -l 2>/dev/null; echo "$CRON_COMMAND") | crontab -
         print_success "Cron job updated with proper PATH environment"
     else
@@ -226,7 +226,7 @@ main() {
     print_success "Installation completed!"
     echo ""
     print_info "Available commands:"
-    echo "  wsl-smart-sync              - Manual sync to OneDrive"
+    echo "  wsl-sync-to-onedrive        - Manual sync to OneDrive"
     echo "  wsl-sync-from-onedrive      - Manual sync from OneDrive"
     echo ""
     print_info "Configuration: $CONFIG_DIR/config"

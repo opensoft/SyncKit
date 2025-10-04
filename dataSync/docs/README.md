@@ -55,7 +55,7 @@ This project contains the source scripts for the WSL-OneDrive sync system.
 
 | Script | Purpose | Location After Install |
 |--------|---------|----------------------|
-| `wsl-smart-sync` | Smart sync WSL → OneDrive | `~/.local/bin/` or `/usr/local/bin/` |
+| `wsl-sync-to-onedrive` | Smart sync WSL → OneDrive | `~/.local/bin/` or `/usr/local/bin/` |
 | `wsl-sync-from-onedrive` | OneDrive → WSL sync | `~/.local/bin/` or `/usr/local/bin/` |
 | `dataSync-installer.sh` | Professional installer | - |
 | `uninstall-wsl-sync.sh` | Clean uninstaller | - |
@@ -80,7 +80,7 @@ The system automatically syncs your WSL projects to OneDrive every 10 minutes wh
 ### Manual Commands
 ```bash
 # Sync WSL projects TO OneDrive
-wsl-smart-sync
+wsl-sync-to-onedrive
 
 # Sync FROM OneDrive TO WSL (when switching machines)
 wsl-sync-from-onedrive
@@ -166,10 +166,10 @@ chmod +x release/*.sh
 **Sync not working?**
 ```bash
 # Check cron job exists
-crontab -l | grep wsl-smart-sync
+crontab -l | grep wsl-sync-to-onedrive
 
 # Manual test
-wsl-smart-sync
+wsl-sync-to-onedrive
 
 # Check logs
 tail ~/.local/share/wsl-sync/logs/sync.log

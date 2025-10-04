@@ -13,9 +13,9 @@ DataSync provides automated bidirectional file synchronization between WSL (Wind
 ## Components
 
 ### Scripts
-- `install-wsl-sync.sh` - Installer script for setting up DataSync
+- `dataSync-installer.sh` - Installer script for setting up DataSync
 - `uninstall-wsl-sync.sh` - Uninstaller script for removing DataSync
-- `wsl-smart-sync` - Main synchronization script (WSL→OneDrive)
+- `wsl-sync-to-onedrive` - Main synchronization script (WSL→OneDrive)
 - `wsl-sync-from-onedrive` - Reverse synchronization script (OneDrive→WSL)
 - `wsl-bidirectional-sync.sh` - Enhanced bidirectional sync with conflict resolution
 
@@ -30,7 +30,7 @@ DataSync provides automated bidirectional file synchronization between WSL (Wind
 
 ```bash
 # Install DataSync system-wide
-./scripts/install-wsl-sync.sh
+./scripts/dataSync-installer.sh
 
 # Uninstall DataSync
 ./scripts/uninstall-wsl-sync.sh
@@ -56,7 +56,7 @@ DataSync runs automatically via cron every 10 minutes after installation.
 ### Manual Sync
 ```bash
 # Sync WSL to OneDrive
-wsl-smart-sync
+wsl-sync-to-onedrive
 
 # Sync OneDrive to WSL
 wsl-sync-from-onedrive
