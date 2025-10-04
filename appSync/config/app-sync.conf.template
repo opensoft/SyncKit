@@ -1,0 +1,97 @@
+# AppSync Configuration Template
+# Copy this file to ~/.config/app-sync/app-sync.conf and customize
+
+# =============================================================================
+# GENERAL SETTINGS
+# =============================================================================
+
+# Enable/disable AppSync functionality
+APPSYNC_ENABLED=true
+
+# Sync interval (in minutes) - 0 for manual sync only
+SYNC_INTERVAL=60
+
+# Log level (DEBUG, INFO, WARN, ERROR)
+LOG_LEVEL=INFO
+
+# =============================================================================
+# SYNC LOCATIONS
+# =============================================================================
+
+# Local application configuration directory
+LOCAL_CONFIG_DIR="$HOME/.config/app-sync"
+
+# OneDrive sync directory for application configurations
+ONEDRIVE_CONFIG_DIR="/mnt/c/Users/$(whoami)/OneDrive - Company/app-configs"
+
+# Local application data directory  
+LOCAL_APP_DATA="$HOME/.local/share/app-sync"
+
+# =============================================================================
+# PACKAGE MANAGERS
+# =============================================================================
+
+# Enable/disable specific package managers
+ENABLE_APT=true
+ENABLE_SNAP=true
+ENABLE_FLATPAK=true
+ENABLE_NPM=true
+ENABLE_PIP=true
+ENABLE_CARGO=false
+ENABLE_GO_MODULES=false
+
+# Windows package managers (for cross-platform sync)
+ENABLE_CHOCOLATEY=true
+ENABLE_WINGET=true
+
+# =============================================================================
+# SYNC RULES
+# =============================================================================
+
+# Applications to always sync (comma-separated)
+ALWAYS_SYNC_APPS="git,nodejs,python3,docker"
+
+# Applications to never sync (comma-separated)
+NEVER_SYNC_APPS="firefox,chromium"
+
+# Sync application configurations
+SYNC_APP_CONFIGS=true
+
+# Sync package lists
+SYNC_PACKAGE_LISTS=true
+
+# =============================================================================
+# PLATFORM DETECTION
+# =============================================================================
+
+# Auto-detect current platform
+AUTO_DETECT_PLATFORM=true
+
+# Override platform detection (linux, windows, macos)
+FORCE_PLATFORM=""
+
+# =============================================================================
+# BACKUP SETTINGS
+# =============================================================================
+
+# Create backups before making changes
+CREATE_BACKUPS=true
+
+# Number of backups to keep
+BACKUP_RETENTION=5
+
+# Backup directory
+BACKUP_DIR="$LOCAL_APP_DATA/backups"
+
+# =============================================================================
+# ADVANCED SETTINGS
+# =============================================================================
+
+# Maximum sync attempts before giving up
+MAX_SYNC_ATTEMPTS=3
+
+# Timeout for package manager operations (seconds)
+PACKAGE_TIMEOUT=300
+
+# Enable dry-run mode (preview changes without applying)
+DRY_RUN=false
