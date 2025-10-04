@@ -91,36 +91,47 @@ install_scripts() {
     # Get the directory where this installer is located
     SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
     
-    # Install the bidirectional sync script as wsl-smart-sync
-    if [ -f "$SCRIPT_DIR/wsl-bidirectional-sync.sh" ]; then
-        print_info "Installing bidirectional sync as wsl-sync-to-onedrive..."
-        cp "$SCRIPT_DIR/wsl-bidirectional-sync.sh" "$BIN_DIR/wsl-sync-to-onedrive"
-        
-        # Update the log file paths to use consistent naming
-        sed -i "s|WSL_SYNC_MARKER=.*|WSL_SYNC_MARKER=\"$DATA_DIR/.last_wsl_sync\"|g" "$BIN_DIR/wsl-smart-sync"
-        sed -i "s|ONEDRIVE_SYNC_MARKER=.*|ONEDRIVE_SYNC_MARKER=\"$DATA_DIR/.last_onedrive_sync\"|g" "$BIN_DIR/wsl-smart-sync"
-        sed -i "s|CONFLICT_LOG=.*|CONFLICT_LOG=\"$LOG_DIR/conflicts.log\"|g" "$BIN_DIR/wsl-smart-sync"
+    # Install the simple unidirectional WSL → OneDrive script
+    if [ -f "$SCRIPT_DIR/wsl-sync-to-onedrive" ]; then
+        print_info "Installing WSL → OneDrive sync script..."
+        cp "$SCRIPT_DIR/wsl-sync-to-onedrive" "$BIN_DIR/wsl-sync-to-onedrive"
     else
-        print_error "wsl-bidirectional-sync.sh not found in $SCRIPT_DIR"
+        print_error "wsl-sync-to-onedrive not found in $SCRIPT_DIR"
         exit 1
     fi
     
-    # Install the reverse sync script
+    # Install the simple unidirectional OneDrive → WSL script
     if [ -f "$SCRIPT_DIR/wsl-sync-from-onedrive" ]; then
-        print_info "Installing reverse sync script..."
+        print_info "Installing OneDrive → WSL sync script..."
         cp "$SCRIPT_DIR/wsl-sync-from-onedrive" "$BIN_DIR/wsl-sync-from-onedrive"
     else
         print_error "wsl-sync-from-onedrive not found in $SCRIPT_DIR"
         exit 1
     fi
     
+    # Install the bidirectional coordinator script
+    if [ -f "$SCRIPT_DIR/wsl-bidirectional-sync.sh" ]; then
+        print_info "Installing bidirectional coordinator script..."
+        cp "$SCRIPT_DIR/wsl-bidirectional-sync.sh" "$BIN_DIR/wsl-bidirectional-sync"
+        
+        # Update the log file paths to use consistent naming
+        sed -i "s|WSL_SYNC_MARKER=.*|WSL_SYNC_MARKER=\"$DATA_DIR/.last_wsl_sync\"|g" "$BIN_DIR/wsl-bidirectional-sync"
+        sed -i "s|ONEDRIVE_SYNC_MARKER=.*|ONEDRIVE_SYNC_MARKER=\"$DATA_DIR/.last_onedrive_sync\"|g" "$BIN_DIR/wsl-bidirectional-sync"
+        sed -i "s|CONFLICT_LOG=.*|CONFLICT_LOG=\"$LOG_DIR/conflicts.log\"|g" "$BIN_DIR/wsl-bidirectional-sync"
+    else
+        print_error "wsl-bidirectional-sync.sh not found in $SCRIPT_DIR"
+        exit 1
+    fi
+    
     # Make scripts executable
     chmod +x "$BIN_DIR/wsl-sync-to-onedrive"
     chmod +x "$BIN_DIR/wsl-sync-from-onedrive"
+    chmod +x "$BIN_DIR/wsl-bidirectional-sync"
     
     print_success "Scripts installed to $BIN_DIR"
-    print_info "wsl-sync-to-onedrive: Advanced bidirectional sync with conflict resolution"
+    print_info "wsl-sync-to-onedrive: Manual WSL → OneDrive sync"
     print_info "wsl-sync-from-onedrive: Manual OneDrive → WSL sync"
+    print_info "wsl-bidirectional-sync: Automated bidirectional sync with conflict resolution"
 }
 
 create_config() {
@@ -155,13 +166,13 @@ setup_cron() {
     
     # Add cron job for current user with proper PATH environment
     # This fixes the issue where cron jobs fail due to missing PATH variables
-    CRON_COMMAND="*/5 * * * * PATH=/usr/local/bin:/usr/bin:/bin $BIN_DIR/wsl-sync-to-onedrive"
+    CRON_COMMAND="*/5 * * * * PATH=/usr/local/bin:/usr/bin:/bin $BIN_DIR/wsl-bidirectional-sync"
     
     # Check if cron job already exists
-    if crontab -l 2>/dev/null | grep -q "wsl-sync-to-onedrive"; then
+    if crontab -l 2>/dev/null | grep -q "wsl-bidirectional-sync"; then
         print_warning "Cron job already exists, updating with proper PATH..."
         # Remove old cron job and add new one with PATH
-        crontab -l 2>/dev/null | grep -v "wsl-sync-to-onedrive" | crontab -
+        crontab -l 2>/dev/null | grep -v "wsl-bidirectional-sync" | crontab -
         (crontab -l 2>/dev/null; echo "$CRON_COMMAND") | crontab -
         print_success "Cron job updated with proper PATH environment"
     else
@@ -226,14 +237,14 @@ main() {
     print_success "Installation completed!"
     echo ""
     print_info "Available commands:"
-    echo "  wsl-sync-to-onedrive        - Manual sync to OneDrive"
-    echo "  wsl-sync-from-onedrive      - Manual sync from OneDrive"
+    echo "  wsl-sync-to-onedrive        - Manual WSL → OneDrive sync"
+    echo "  wsl-sync-from-onedrive      - Manual OneDrive → WSL sync"
+    echo "  wsl-bidirectional-sync      - Manual bidirectional sync (same as automatic)"
     echo ""
     print_info "Configuration: $CONFIG_DIR/config"
     print_info "Logs: $LOG_DIR/sync.log"
     echo ""
-    print_info "Automatic sync runs every 10 minutes via cron"
+    print_info "Automatic sync runs every 5 minutes via cron"
 }
 
 main "$@"
-EOF

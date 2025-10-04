@@ -31,8 +31,8 @@ remove_cron_job() {
     print_info "Removing cron job..."
     
     # Remove cron job
-    if crontab -l 2>/dev/null | grep -q "wsl-smart-sync"; then
-        crontab -l 2>/dev/null | grep -v "wsl-smart-sync" | crontab -
+    if crontab -l 2>/dev/null | grep -q "wsl-bidirectional-sync"; then
+        crontab -l 2>/dev/null | grep -v "wsl-bidirectional-sync" | crontab -
         print_success "Cron job removed"
     else
         print_info "No cron job found"
@@ -51,8 +51,9 @@ remove_files() {
         fi
         
         # System installation cleanup
-        rm -f "/usr/local/bin/wsl-smart-sync"
+        rm -f "/usr/local/bin/wsl-sync-to-onedrive"
         rm -f "/usr/local/bin/wsl-sync-from-onedrive"
+        rm -f "/usr/local/bin/wsl-bidirectional-sync"
         rm -rf "/etc/wsl-sync"
         rm -rf "/var/log/wsl-sync"
         rm -rf "/usr/local/share/wsl-sync"
@@ -62,8 +63,9 @@ remove_files() {
     
     # User installation cleanup
     if [ -d "$HOME/.config/wsl-sync" ]; then
-        rm -f "$HOME/.local/bin/wsl-smart-sync"
+        rm -f "$HOME/.local/bin/wsl-sync-to-onedrive"
         rm -f "$HOME/.local/bin/wsl-sync-from-onedrive"
+        rm -f "$HOME/.local/bin/wsl-bidirectional-sync"
         rm -rf "$HOME/.config/wsl-sync"
         rm -rf "$HOME/.local/share/wsl-sync"
         
