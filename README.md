@@ -1,166 +1,400 @@
-# SyncKit - Comprehensive Synchronization Suite
+# SyncKit - WSL ↔ OneDrive Bidirectional Sync
 
-**A complete synchronization solution for modern development environments**
+**Intelligent bidirectional synchronization between WSL projects and OneDrive with conflict resolution and comprehensive logging.**
 
-![SyncKit](https://img.shields.io/badge/SyncKit-v2.0-blue?style=for-the-badge) ![Platform](https://img.shields.io/badge/Platform-WSL%20%7C%20Windows%20%7C%20Linux-lightgrey?style=for-the-badge)
+![SyncKit Architecture](https://img.shields.io/badge/WSL-↔-OneDrive?style=for-the-badge&logo=microsoft&logoColor=white)
 
-SyncKit is a comprehensive synchronization suite that provides automated synchronization solutions for different aspects of your development and work environment. It consists of two main subprojects designed to work together for complete environment management.
+## 🚀 Features
 
-## 🎯 Subprojects
+- **🔄 Bidirectional Sync**: Automatically syncs changes in both directions (WSL ↔ OneDrive)
+- **🧠 Smart Change Detection**: Only syncs when files have actually changed
+- **⚡ Conflict Resolution**: Multiple strategies to handle file conflicts
+- **🛡️ Exclusion Patterns**: Intelligently excludes build artifacts, temp files, and version control
+- **📊 Comprehensive Logging**: Multi-level logging with detailed diagnostics
+- **⏰ Automated Scheduling**: Runs every 5 minutes via cron
+- **🔧 Configurable**: Flexible configuration system
 
-### 🔄 DataSync - File & Data Synchronization
-**Status**: ✅ **Production Ready**  
-**Location**: [`./dataSync/`](./dataSync/)
-
-Automated bidirectional file synchronization between WSL (Windows Subsystem for Linux) and OneDrive, enabling seamless data management across Windows and Linux environments.
-
-**Key Features:**
-- Bidirectional WSL ↔ OneDrive synchronization
-- Smart change detection and conflict resolution
-- Automated scheduling with cron integration
-- Zone Identifier handling for Windows files
-- Professional Linux filesystem installation
-
-[📖 DataSync Documentation](./dataSync/README.md)
-
-### 📦 AppSync - Application Synchronization
-**Status**: 🚧 **Under Development**  
-**Location**: [`./appSync/`](./appSync/)
-
-Cross-platform application synchronization that maintains consistent development environments by synchronizing installed applications, configurations, and package lists across multiple workstations.
-
-**Planned Features:**
-- Multi-platform package manager support (apt, chocolatey, winget, homebrew)
-- Application configuration synchronization
-- Development environment setup automation
-- Team environment standardization
-
-[📖 AppSync Documentation](./appSync/README.md)
-
-## 🏗️ Architecture
+## 📁 Directory Structure
 
 ```
-SyncKit/
-├── dataSync/                   # File & Data Sync (Production)
-│   ├── scripts/               # DataSync executable scripts
-│   ├── docs/                  # DataSync documentation
-│   └── config/                # DataSync configuration templates
-├── appSync/                    # Application Sync (Development)
-│   ├── scripts/               # AppSync executable scripts (planned)
-│   ├── docs/                  # AppSync documentation
-│   └── config/                # AppSync configuration templates
-├── README.md                   # This file - main project overview
-├── LICENSE                     # MIT License
-├── PRD.md                      # Product Requirements Document
-└── ARCHITECTURE.md             # Overall architecture documentation
+/home/brett/
+├── .config/wsl-sync/
+│   ├── config                          # Main sync configuration
+│   └── bidirectional.conf             # Bidirectional sync settings
+├── .local/
+│   ├── bin/
+│   │   └── wsl-smart-sync              # Main sync script
+│   └── share/SyncKit/
+│       ├── .last_wsl_sync              # OneDrive → WSL sync marker
+│       ├── .last_onedrive_sync         # WSL → OneDrive sync marker
+│       └── logs/
+│           ├── sync.log                # Main sync log
+│           └── conflicts.log           # Conflict resolution log
+└── projects/                           # Your synced projects
+    ├── SyncKit/                        # This project
+    ├── DevBench/
+    └── [other projects...]
 ```
 
-## 🚀 Quick Start
+## 🛠️ Installation & Setup
 
-### DataSync (Ready to Use)
+### Prerequisites
+- Windows Subsystem for Linux (WSL) with Ubuntu
+- OneDrive Business account with sync enabled
+- `rsync` installed (usually pre-installed)
+
+### Current Installation
+SyncKit is already installed and configured on your system:
+
+**✅ Installed Components:**
+- Main sync script: `~/.local/bin/wsl-smart-sync`
+- Configuration: `~/.config/wsl-sync/config`
+- Bidirectional config: `~/.config/wsl-sync/bidirectional.conf`
+- Cron job: Every 5 minutes
+
+**✅ Sync Paths:**
+- **WSL Source**: `/home/brett/projects`
+- **OneDrive Destination**: `/mnt/c/Users/brett/OneDrive - Opensoft Inc/projects/wsl`
+
+## ⚙️ Configuration
+
+### Main Configuration (`~/.config/wsl-sync/config`)
 ```bash
-# Navigate to DataSync
-cd dataSync/
+# WSL Projects Directory (source)
+WSL_PROJECTS_DIR="/home/brett/projects"
 
-# Install DataSync system-wide
-./scripts/install-wsl-sync.sh
+# OneDrive WSL Directory (destination) 
+ONEDRIVE_WSL_DIR="/mnt/c/Users/brett/OneDrive - Opensoft Inc/projects/wsl"
 
-# Configure your sync paths
-# Edit ~/.config/wsl-sync/config
-
-# Start syncing (or wait for automatic cron sync)
-wsl-smart-sync
+# Tracking Files
+LAST_SYNC_FILE="/home/brett/.local/share/SyncKit/.last_sync_time"
+LOG_FILE="/home/brett/.local/share/SyncKit/logs/sync.log"
 ```
 
-### AppSync (Coming Soon)
+### Bidirectional Configuration (`~/.config/wsl-sync/bidirectional.conf`)
 ```bash
-# Navigate to AppSync
-cd appSync/
+# Conflict resolution strategy
+CONFLICT_STRATEGY=newer_wins
 
-# Review planned features and architecture
-cat README.md
+# Exclusion patterns
+EXCLUDE_PATTERNS=(
+    "*.tmp"
+    "*.log"
+    ".git"
+    "node_modules"
+    "build"
+    "dist"
+    ".DS_Store"
+    "Thumbs.db"
+    "~$*"
+    "*:Zone.Identifier"      # Windows security metadata
+    "*.Zone.Identifier"      # Alternative format
+)
 
-# Check development status
-ls -la scripts/  # Currently empty - under development
+# Conflict detection window (minutes)
+CONFLICT_WINDOW_MINUTES=30
 ```
 
-## 💡 Use Cases
+## 🔄 How Bidirectional Sync Works
 
-### Individual Developer
-- **DataSync**: Keep project files synchronized between WSL and OneDrive for backup and cross-device access
-- **AppSync**: Maintain consistent development tools across multiple workstations
+### Sync Logic
+1. **Change Detection**: Checks for changes on both WSL and OneDrive sides
+2. **Conflict Analysis**: Identifies files modified on both sides within the conflict window
+3. **Conflict Resolution**: Applies resolution strategy (newer wins by default)
+4. **Sync Execution**: Performs sync operations using rsync with exclusions
+5. **Marker Updates**: Updates sync timestamps for next iteration
 
-### Development Teams
-- **DataSync**: Share project configurations and ensure team members have synchronized project data
-- **AppSync**: Standardize development environments across the team
+### Sync Scenarios
 
-### IT Administration
-- **DataSync**: Automate backup and synchronization of critical development data
-- **AppSync**: Deploy and maintain consistent application stacks across multiple workstations
+| WSL Changes | OneDrive Changes | Action |
+|-------------|------------------|---------|
+| ✅ Yes | ❌ No | WSL → OneDrive |
+| ❌ No | ✅ Yes | OneDrive → WSL |
+| ✅ Yes | ✅ Yes | Conflict Resolution + Bidirectional |
+| ❌ No | ❌ No | No sync needed |
 
-## 🔧 Current Installation Status
+## ⚔️ Conflict Resolution Strategies
 
-DataSync is currently installed and configured on this system:
+### 1. `newer_wins` (Default)
+The file with the most recent modification time wins.
+```bash
+CONFLICT_STRATEGY=newer_wins
+```
 
-**✅ Active Components:**
-- DataSync scripts installed in `~/.local/bin/`
-- Configuration in `~/.config/wsl-sync/`
-- Automated sync via cron every 10 minutes
-- WSL projects syncing to OneDrive Business
+### 2. `wsl_wins`
+WSL version always takes precedence.
+```bash
+CONFLICT_STRATEGY=wsl_wins
+```
 
-**🚧 Development Components:**
-- AppSync architecture and planning complete
-- Implementation in progress
+### 3. `onedrive_wins`
+OneDrive version always takes precedence.
+```bash
+CONFLICT_STRATEGY=onedrive_wins
+```
 
-## 📊 Project Status
+### 4. `manual`
+Creates backup copies and requires manual intervention.
+```bash
+CONFLICT_STRATEGY=manual
+```
+Creates files like:
+- `file.txt.wsl-conflict-20251004-063032`
+- `file.txt.onedrive-conflict-20251004-063032`
 
-| Component | Status | Version | Description |
-|-----------|--------|---------|-------------|
-| **DataSync** | ✅ Production | v2.0 | WSL-OneDrive file synchronization |
-| **AppSync** | 🚧 Development | v0.1-alpha | Application synchronization |
-| **Documentation** | ✅ Complete | v2.0 | Comprehensive docs for both projects |
-| **Testing** | ✅ Complete | v2.0 | DataSync fully tested and deployed |
+## 🎯 Usage
 
-## 🤝 Contributing
+### Automatic Operation
+SyncKit runs automatically every 5 minutes via cron:
+```bash
+*/5 * * * * HOME=/home/brett USER=brett PATH=/usr/local/bin:/usr/bin:/bin /home/brett/.local/bin/wsl-smart-sync
+```
 
-SyncKit is actively developed and maintained. Contributions are welcome!
+### Manual Operation
+Run sync manually:
+```bash
+~/.local/bin/wsl-smart-sync
+```
 
-### DataSync
-DataSync is production-ready but welcomes improvements and bug fixes.
+### Check Sync Status
+View recent sync activity:
+```bash
+tail -20 ~/.local/share/SyncKit/logs/sync.log
+```
 
-### AppSync  
-AppSync is in active development. Design input, feature requests, and implementation help are especially welcome.
+View conflicts:
+```bash
+tail -10 ~/.local/share/SyncKit/logs/conflicts.log
+```
 
-### Development Guidelines
-- Follow existing code style and patterns
-- Update documentation for any changes
-- Test thoroughly before submitting changes
-- Use conventional commit messages
+## 📊 Monitoring & Logs
 
-## 📄 Documentation
+### Log Levels
+- **[DEBUG]**: Environment checks, file detection, detailed operations
+- **[INFO]**: Sync operations, completion status, file counts
+- **[WARN]**: Conflicts, non-critical issues
+- **[ERROR]**: Sync failures, permission problems
 
-- **[DataSync README](./dataSync/README.md)** - Complete DataSync documentation
-- **[AppSync README](./appSync/README.md)** - AppSync architecture and planning
-- **[Architecture Overview](./ARCHITECTURE.md)** - Overall system architecture
-- **[Product Requirements](./PRD.md)** - Detailed product requirements
+### Sample Log Output
+```
+[INFO] 2025-10-04 06:33:16 - === WSL-OneDrive Bidirectional Sync Started ===
+[DEBUG] 2025-10-04 06:33:16 - ✅ WSL projects directory exists and readable
+[INFO] 2025-10-04 06:33:16 - WSL changes detected since last OneDrive sync
+[INFO] 2025-10-04 06:33:16 - Starting sync: WSL → OneDrive
+[INFO] 2025-10-04 06:33:16 - ✅ Sync completed successfully: WSL → OneDrive
+[INFO] 2025-10-04 06:33:16 - Files transferred: 42
+```
 
-## 🔗 Integration
+### Performance Metrics
+- **Source Size**: ~7.7GB
+- **Sync Frequency**: Every 5 minutes
+- **Conflict Detection**: ~16 minutes for full scan
+- **Typical Sync**: 30 seconds - 3 minutes depending on changes
 
-DataSync and AppSync are designed to work together:
+## 🚨 Troubleshooting
 
-- **DataSync** handles your files, projects, and data
-- **AppSync** handles your applications, tools, and configurations
-- Together they provide complete workstation environment synchronization
+### Common Issues
 
-## 📝 License
+#### Sync Failures
+```bash
+# Check recent errors
+grep "ERROR" ~/.local/share/SyncKit/logs/sync.log | tail -10
+```
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+#### Permission Issues
+```bash
+# Verify directory permissions
+ls -la ~/projects
+ls -la "/mnt/c/Users/brett/OneDrive - Opensoft Inc/projects/wsl"
+```
 
-## 🏷️ Version History
+#### OneDrive Sync Conflicts
+```bash
+# Check for OneDrive temp files
+find "/mnt/c/Users/brett/OneDrive - Opensoft Inc/projects/wsl" -name "*.tmp" -o -name "~*"
+```
 
-- **v2.0** - Subproject organization, DataSync production ready, AppSync planning
-- **v1.0** - Initial DataSync implementation and deployment
+### Manual Recovery
+If sync gets stuck or conflicts arise:
+
+1. **Stop automatic sync** (temporarily):
+   ```bash
+   crontab -e
+   # Comment out the sync line with #
+   ```
+
+2. **Check for open files**:
+   ```bash
+   lsof +D ~/projects
+   ```
+
+3. **Manual conflict resolution**:
+   ```bash
+   # Find conflict files
+   find ~/projects -name "*.wsl-conflict-*" -o -name "*.onedrive-conflict-*"
+   ```
+
+4. **Force sync** (use with caution):
+   ```bash
+   # Remove sync markers to force full sync
+   rm ~/.local/share/SyncKit/.last_*_sync
+   ~/.local/bin/wsl-smart-sync
+   ```
+
+## 📈 Customization
+
+### Adding Exclusion Patterns
+Edit `~/.config/wsl-sync/bidirectional.conf`:
+```bash
+EXCLUDE_PATTERNS=(
+    "*.tmp"
+    "*.log"
+    ".git"
+    "node_modules"
+    "build"
+    "dist"
+    ".DS_Store"
+    "Thumbs.db"
+    "~$*"
+    # Add your patterns here
+    "*.cache"
+    "venv"
+    ".vscode/settings.json"
+)
+```
+
+### Changing Sync Frequency
+Edit crontab:
+```bash
+crontab -e
+# Change */5 to different interval (e.g., */10 for 10 minutes)
+*/10 * * * * HOME=/home/brett USER=brett PATH=/usr/local/bin:/usr/bin:/bin /home/brett/.local/bin/wsl-smart-sync
+```
+
+### Conflict Window Adjustment
+Edit `~/.config/wsl-sync/bidirectional.conf`:
+```bash
+# Increase window for slower workflows
+CONFLICT_WINDOW_MINUTES=60
+
+# Decrease for faster conflict detection
+CONFLICT_WINDOW_MINUTES=15
+```
+
+## 🔮 Advanced Features
+
+### Conflict Resolution Scenarios
+
+#### Scenario 1: Developer working on both Windows and WSL
+```bash
+# Set strategy to prefer WSL for development work
+CONFLICT_STRATEGY=wsl_wins
+```
+
+#### Scenario 2: Collaboration with team via OneDrive
+```bash
+# Set strategy to prefer newer files
+CONFLICT_STRATEGY=newer_wins
+```
+
+#### Scenario 3: Critical files need manual review
+```bash
+# Set manual resolution for careful review
+CONFLICT_STRATEGY=manual
+```
+
+### Custom Exclusions by Project
+You can create project-specific `.syncignore` files (future enhancement).
+
+## 🔧 Technical Details
+
+### Sync Markers
+- **WSL → OneDrive**: `~/.local/share/SyncKit/.last_onedrive_sync`
+- **OneDrive → WSL**: `~/.local/share/SyncKit/.last_wsl_sync`
+
+### Rsync Options
+```bash
+rsync -av --delete --stats --human-readable [exclusions] source/ destination/
+```
+- `-a`: Archive mode (preserves permissions, timestamps, etc.)
+- `-v`: Verbose output
+- `--delete`: Remove files that don't exist in source
+- `--stats`: Show transfer statistics
+- `--human-readable`: Human-readable file sizes
+
+### Dependencies
+- `rsync`: File synchronization
+- `find`: File discovery and change detection
+- `stat`: File timestamp queries
+- `lsof`: Open file detection (optional)
+- `cron`: Task scheduling
+
+## 📋 Status & Health Check
+
+### Quick Health Check
+```bash
+# Check if sync is running
+ps aux | grep wsl-smart-sync
+
+# Check last sync time
+ls -la ~/.local/share/SyncKit/.last_*_sync
+
+# Check recent activity
+tail -5 ~/.local/share/SyncKit/logs/sync.log
+
+# Verify cron job
+crontab -l | grep wsl-smart-sync
+```
+
+### System Information
+- **Platform**: WSL Ubuntu 24.04
+- **Shell**: zsh 5.9
+- **Sync Method**: rsync bidirectional
+- **Scheduling**: cron (every 5 minutes)
+- **Logging**: Multi-level with rotation
+
+## 🎯 Best Practices
+
+1. **🔄 Regular Monitoring**: Check logs weekly for any issues
+2. **⚡ Exclude Build Artifacts**: Keep exclusion patterns updated
+3. **🛡️ Backup Critical Files**: OneDrive provides versioning, but consider additional backups
+4. **🕐 Respect Conflict Windows**: Avoid rapid changes on both sides simultaneously
+5. **📊 Monitor Performance**: Large projects may need longer sync intervals
+
+## 🆘 Support & Troubleshooting
+
+### Get Help
+1. **Check Logs**: Start with `~/.local/share/SyncKit/logs/sync.log`
+2. **Review Configuration**: Verify paths and settings
+3. **Test Manual Sync**: Run `~/.local/bin/wsl-smart-sync` manually
+4. **Check System Resources**: Monitor disk space and memory
+
+### Emergency Procedures
+- **Stop All Syncing**: `crontab -e` and comment out sync line
+- **Restore from OneDrive**: Use OneDrive version history
+- **Reset Sync State**: Remove all `.last_*_sync` files
 
 ---
 
-**SyncKit** - *Synchronize Everything, Seamlessly* 🔄
+## 📝 Changelog
+
+### v2.0.0 (2025-10-04) - Bidirectional Sync
+- ✨ **NEW**: Full bidirectional synchronization
+- ✨ **NEW**: Conflict detection and resolution
+- ✨ **NEW**: Multiple conflict resolution strategies
+- ✨ **NEW**: Comprehensive exclusion patterns
+- ✨ **NEW**: Separate sync markers for each direction
+- ✨ **NEW**: Conflict logging
+- 🔧 **IMPROVED**: Enhanced logging with DEBUG/INFO/WARN/ERROR levels
+- 🔧 **IMPROVED**: Better error handling and diagnostics
+
+### v1.0.0 (2025-10-04) - Unidirectional Sync
+- ✨ Initial implementation with WSL → OneDrive sync
+- ✨ Smart change detection
+- ✨ Cron-based scheduling
+- ✨ Basic logging and error handling
+
+---
+
+*SyncKit v2.0.0 - Bidirectional Smart Sync for WSL ↔ OneDrive*  
+*Last Updated: October 4, 2025*

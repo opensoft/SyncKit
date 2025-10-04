@@ -232,7 +232,7 @@ main() {
     print_info "Configuration: $CONFIG_DIR/config"
     print_info "Logs: $LOG_DIR/sync.log"
     echo ""
-    print_info "Automatic sync runs every 5 minutes via cron"
+    print_info "Automatic sync runs every 10 minutes via cron"
 }
 
 main "$@"

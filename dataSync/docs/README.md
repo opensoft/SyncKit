@@ -14,10 +14,10 @@ git clone <your-repo-url> SyncKit
 cd SyncKit
 
 # Install for current user
-./src/scripts/install-wsl-sync.sh
+./scripts/dataSync-installer.sh
 
 # Or install system-wide
-sudo ./src/scripts/install-wsl-sync.sh --system
+sudo ./scripts/dataSync-installer.sh --system
 ```
 
 ## 🎯 Features
@@ -57,7 +57,7 @@ This project contains the source scripts for the WSL-OneDrive sync system.
 |--------|---------|----------------------|
 | `wsl-smart-sync` | Smart sync WSL → OneDrive | `~/.local/bin/` or `/usr/local/bin/` |
 | `wsl-sync-from-onedrive` | OneDrive → WSL sync | `~/.local/bin/` or `/usr/local/bin/` |
-| `install-wsl-sync.sh` | Professional installer | - |
+| `dataSync-installer.sh` | Professional installer | - |
 | `uninstall-wsl-sync.sh` | Clean uninstaller | - |
 
 ### Configuration Files
@@ -155,7 +155,7 @@ wsl-smart-sync
 ```bash
 # Copy scripts to release directory
 mkdir -p release/
-cp src/scripts/{install-wsl-sync.sh,uninstall-wsl-sync.sh,README.md} release/
+cp scripts/{dataSync-installer.sh,uninstall-wsl-sync.sh,README.md} release/
 chmod +x release/*.sh
 ```
 
