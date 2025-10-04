@@ -88,117 +88,39 @@ create_directories() {
 install_scripts() {
     print_info "Installing sync scripts..."
     
-    # Create smart-sync script
-    cat > "$BIN_DIR/wsl-smart-sync" << 'EOF'
-#!/bin/bash
-
-# WSL-OneDrive Smart Sync
-# Only syncs when files have changed
-
-# Source configuration
-CONFIG_FILE=""
-if [ -f "/etc/wsl-sync/config" ]; then
-    CONFIG_FILE="/etc/wsl-sync/config"
-elif [ -f "$HOME/.config/wsl-sync/config" ]; then
-    CONFIG_FILE="$HOME/.config/wsl-sync/config"
-else
-    echo "Error: Configuration file not found"
-    exit 1
-fi
-
-source "$CONFIG_FILE"
-
-# Function to log messages with timestamp
-log_message() {
-    echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" | tee -a "$LOG_FILE"
-}
-
-# Check if files changed since last sync
-if [ ! -f "$LAST_SYNC_FILE" ]; then
-    log_message "First run - will sync all files"
-    SYNC_NEEDED=true
-else
-    # Check if any files are newer than the last sync
-    if find "$WSL_PROJECTS_DIR" -newer "$LAST_SYNC_FILE" 2>/dev/null | grep -q .; then
-        log_message "Files changed since last sync - syncing now"
-        SYNC_NEEDED=true
-    else
-        log_message "No changes detected since last sync"
-        SYNC_NEEDED=false
-    fi
-fi
-
-# Perform sync if needed
-if [ "$SYNC_NEEDED" = true ]; then
-    log_message "Starting sync: WSL → OneDrive"
+    # Get the directory where this installer is located
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
     
-    # Create OneDrive directory if it doesn't exist
-    mkdir -p "$ONEDRIVE_WSL_DIR"
-    
-    # Use rsync to sync efficiently
-    if rsync -av --delete "$WSL_PROJECTS_DIR/" "$ONEDRIVE_WSL_DIR/"; then
-        # Update the sync timestamp
-        touch "$LAST_SYNC_FILE"
-        log_message "✅ Sync completed successfully"
+    # Install the bidirectional sync script as wsl-smart-sync
+    if [ -f "$SCRIPT_DIR/wsl-bidirectional-sync.sh" ]; then
+        print_info "Installing bidirectional sync as wsl-smart-sync..."
+        cp "$SCRIPT_DIR/wsl-bidirectional-sync.sh" "$BIN_DIR/wsl-smart-sync"
+        
+        # Update the log file paths to use consistent naming
+        sed -i "s|WSL_SYNC_MARKER=.*|WSL_SYNC_MARKER=\"$DATA_DIR/.last_wsl_sync\"|g" "$BIN_DIR/wsl-smart-sync"
+        sed -i "s|ONEDRIVE_SYNC_MARKER=.*|ONEDRIVE_SYNC_MARKER=\"$DATA_DIR/.last_onedrive_sync\"|g" "$BIN_DIR/wsl-smart-sync"
+        sed -i "s|CONFLICT_LOG=.*|CONFLICT_LOG=\"$LOG_DIR/conflicts.log\"|g" "$BIN_DIR/wsl-smart-sync"
     else
-        log_message "❌ Sync failed - check permissions and paths"
+        print_error "wsl-bidirectional-sync.sh not found in $SCRIPT_DIR"
         exit 1
     fi
-else
-    log_message "ℹ️  No sync needed"
-fi
-EOF
-
-    # Create sync-from-onedrive script
-    cat > "$BIN_DIR/wsl-sync-from-onedrive" << 'EOF'
-#!/bin/bash
-
-# Sync FROM OneDrive TO WSL
-# Use this when you get home or switch machines
-
-# Source configuration
-CONFIG_FILE=""
-if [ -f "/etc/wsl-sync/config" ]; then
-    CONFIG_FILE="/etc/wsl-sync/config"
-elif [ -f "$HOME/.config/wsl-sync/config" ]; then
-    CONFIG_FILE="$HOME/.config/wsl-sync/config"
-else
-    echo "Error: Configuration file not found"
-    exit 1
-fi
-
-source "$CONFIG_FILE"
-
-# Function to log messages with timestamp
-log_message() {
-    echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" | tee -a "$LOG_FILE"
-}
-
-log_message "Starting sync: OneDrive → WSL"
-
-# Create WSL projects directory if it doesn't exist
-mkdir -p "$WSL_PROJECTS_DIR"
-
-# Use rsync to sync efficiently
-if rsync -av --delete "$ONEDRIVE_WSL_DIR/" "$WSL_PROJECTS_DIR/"; then
-    log_message "✅ Sync from OneDrive completed successfully"
     
-    # Update the sync timestamp so smart-sync doesn't immediately sync back
-    touch "$LAST_SYNC_FILE"
+    # Install the reverse sync script
+    if [ -f "$SCRIPT_DIR/wsl-sync-from-onedrive" ]; then
+        print_info "Installing reverse sync script..."
+        cp "$SCRIPT_DIR/wsl-sync-from-onedrive" "$BIN_DIR/wsl-sync-from-onedrive"
+    else
+        print_error "wsl-sync-from-onedrive not found in $SCRIPT_DIR"
+        exit 1
+    fi
     
-    log_message "📁 Projects available in $WSL_PROJECTS_DIR"
-    ls -la "$WSL_PROJECTS_DIR/"
-else
-    log_message "❌ Sync from OneDrive failed - check permissions and paths"
-    exit 1
-fi
-EOF
-
     # Make scripts executable
     chmod +x "$BIN_DIR/wsl-smart-sync"
     chmod +x "$BIN_DIR/wsl-sync-from-onedrive"
     
     print_success "Scripts installed to $BIN_DIR"
+    print_info "wsl-smart-sync: Advanced bidirectional sync with conflict resolution"
+    print_info "wsl-sync-from-onedrive: Manual OneDrive → WSL sync"
 }
 
 create_config() {
@@ -233,7 +155,7 @@ setup_cron() {
     
     # Add cron job for current user with proper PATH environment
     # This fixes the issue where cron jobs fail due to missing PATH variables
-    CRON_COMMAND="*/10 * * * * PATH=/usr/local/bin:/usr/bin:/bin $BIN_DIR/wsl-smart-sync"
+    CRON_COMMAND="*/5 * * * * PATH=/usr/local/bin:/usr/bin:/bin $BIN_DIR/wsl-smart-sync"
     
     # Check if cron job already exists
     if crontab -l 2>/dev/null | grep -q "wsl-smart-sync"; then
@@ -245,7 +167,7 @@ setup_cron() {
     else
         # Add to existing crontab or create new one
         (crontab -l 2>/dev/null; echo "$CRON_COMMAND") | crontab -
-        print_success "Cron job added - will run every 10 minutes with proper PATH"
+        print_success "Cron job added - will run every 5 minutes with proper PATH"
     fi
 }
 
@@ -310,7 +232,7 @@ main() {
     print_info "Configuration: $CONFIG_DIR/config"
     print_info "Logs: $LOG_DIR/sync.log"
     echo ""
-    print_info "Automatic sync runs every 10 minutes via cron"
+    print_info "Automatic sync runs every 5 minutes via cron"
 }
 
 main "$@"
