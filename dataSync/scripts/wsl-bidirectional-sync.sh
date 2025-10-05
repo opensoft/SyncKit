@@ -95,7 +95,7 @@ fast_scan_changes() {
     local operation_name="$4"
     
     local start_time=$(date +%s)
-    log_message "DEBUG" "Starting fast scan: $operation_name"
+    log_message "DEBUG" "Starting fast scan: $operation_name" >&2
     
     # Build optimized find command
     local exclude_args=$(build_find_excludes)
@@ -106,7 +106,7 @@ fast_scan_changes() {
     eval "find \"$scan_dir\" -type f $exclude_args" > "$temp_scan" 2>/dev/null
     
     local file_count=$(wc -l < "$temp_scan")
-    log_message "DEBUG" "Found $file_count files to check"
+    log_message "DEBUG" "Found $file_count files to check" >&2
     
     # OPTIMIZATION 2: Batch process files to reduce system calls
     > "$output_file"  # Clear output file
@@ -144,7 +144,7 @@ fast_scan_changes() {
     local end_time=$(date +%s)
     local duration=$((end_time - start_time))
     log_performance "$operation_name" "$duration" "$changed_count"
-    log_message "INFO" "Fast scan completed: $changed_count changed files in ${duration}s"
+    log_message "INFO" "Fast scan completed: $changed_count changed files in ${duration}s" >&2
     
     echo "$changed_count"
 }
@@ -189,7 +189,7 @@ fast_check_conflicts() {
     local conflicts_file="$3"
     
     local start_time=$(date +%s)
-    log_message "DEBUG" "Starting fast conflict detection"
+    log_message "DEBUG" "Starting fast conflict detection" >&2
     
     > "$conflicts_file"  # Clear conflicts file
     local conflict_count=0
@@ -237,7 +237,7 @@ fast_check_conflicts() {
     local end_time=$(date +%s)
     local duration=$((end_time - start_time))
     log_performance "conflict_detection" "$duration" "$conflict_count"
-    log_message "DEBUG" "Fast conflict detection completed: $conflict_count conflicts in ${duration}s"
+    log_message "DEBUG" "Fast conflict detection completed: $conflict_count conflicts in ${duration}s" >&2
     
     return $conflict_count
 }
@@ -474,8 +474,8 @@ fi
 # Perform optimized bidirectional sync
 if [ "$QUICK_CHECK_ONLY" = true ]; then
     # Quick mode - just detect changes, don't sync
-    local wsl_changes="$CHANGE_CACHE_DIR/wsl_changes.list"
-    local wsl_changed_count=$(fast_scan_changes "$WSL_PROJECTS_DIR" "$WSL_STATE_DB" "$wsl_changes" "quick_wsl_scan")
+    wsl_changes="$CHANGE_CACHE_DIR/wsl_changes.list"
+    wsl_changed_count=$(fast_scan_changes "$WSL_PROJECTS_DIR" "$WSL_STATE_DB" "$wsl_changes" "quick_wsl_scan")
     log_message "INFO" "Quick scan result: $wsl_changed_count changes detected"
 else
     # Full optimized sync
