@@ -43,7 +43,7 @@ remove_files() {
     print_info "Removing installed files..."
     
     # Try system locations first
-    if [ -d "/etc/wsl-sync" ]; then
+    if [ -d "/etc/SyncKit" ]; then
         if [ "$EUID" -ne 0 ]; then
             print_error "System installation detected, but not running as root"
             print_info "Please run: sudo $0"
@@ -54,20 +54,20 @@ remove_files() {
         rm -f "/usr/local/bin/wsl-sync-to-onedrive"
         rm -f "/usr/local/bin/wsl-sync-from-onedrive"
         rm -f "/usr/local/bin/wsl-bidirectional-sync"
-        rm -rf "/etc/wsl-sync"
-        rm -rf "/var/log/wsl-sync"
-        rm -rf "/usr/local/share/wsl-sync"
+        rm -rf "/etc/SyncKit"
+        rm -rf "/var/log/SyncKit"
+        rm -rf "/usr/local/share/SyncKit"
         
         print_success "System files removed"
     fi
     
     # User installation cleanup
-    if [ -d "$HOME/.config/wsl-sync" ]; then
+    if [ -d "$HOME/.config/SyncKit" ]; then
         rm -f "$HOME/.local/bin/wsl-sync-to-onedrive"
         rm -f "$HOME/.local/bin/wsl-sync-from-onedrive"
         rm -f "$HOME/.local/bin/wsl-bidirectional-sync"
-        rm -rf "$HOME/.config/wsl-sync"
-        rm -rf "$HOME/.local/share/wsl-sync"
+        rm -rf "$HOME/.config/SyncKit"
+        rm -rf "$HOME/.local/share/SyncKit"
         
         print_success "User files removed"
     fi

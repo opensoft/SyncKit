@@ -68,9 +68,35 @@ create_file_entry() {
     fi
 }
 
-# Build optimized exclusion pattern for find
+# Detect if a directory is a git repository
+is_git_repo() {
+    local dir="$1"
+    [ -d "$dir/.git" ] || git -C "$dir" rev-parse --git-dir >/dev/null 2>&1
+}
+
+# Build list of git repositories to exclude entirely
+build_git_exclusions() {
+    local scan_dir="$1"
+    local git_repos=()
+    
+    # Find all directories that are git repositories
+    while IFS= read -r -d '' dir; do
+        if is_git_repo "$dir"; then
+            git_repos+=("$dir")
+            log_message "DEBUG" "Excluding git repository: $dir" >&2
+        fi
+    done < <(find "$scan_dir" -type d -print0 2>/dev/null)
+    
+    # Return array of git repo paths
+    printf '%s\n' "${git_repos[@]}"
+}
+
+# Build optimized exclusion pattern for find with git repo detection
 build_find_excludes() {
+    local scan_dir="$1"
     local exclude_args=""
+    
+    # Standard pattern exclusions
     for pattern in "${EXCLUDE_PATTERNS[@]}"; do
         case "$pattern" in
             "*.tmp"|"*.log"|"~$*")
@@ -84,6 +110,18 @@ build_find_excludes() {
                 ;;
         esac
     done
+    
+    # Add git repository exclusions
+    local git_repos_file=$(mktemp)
+    build_git_exclusions "$scan_dir" > "$git_repos_file"
+    
+    while IFS= read -r git_repo; do
+        if [ -n "$git_repo" ]; then
+            exclude_args="$exclude_args -not -path '$git_repo' -not -path '$git_repo/*'"
+        fi
+    done < "$git_repos_file"
+    
+    rm -f "$git_repos_file"
     echo "$exclude_args"
 }
 
@@ -95,10 +133,10 @@ fast_scan_changes() {
     local operation_name="$4"
     
     local start_time=$(date +%s)
-    log_message "DEBUG" "Starting fast scan: $operation_name"
+    log_message "DEBUG" "Starting fast scan: $operation_name" >&2
     
-    # Build optimized find command
-    local exclude_args=$(build_find_excludes)
+    # Build optimized find command with git repo detection
+    local exclude_args=$(build_find_excludes "$scan_dir")
     local temp_scan=$(mktemp)
     local temp_state=$(mktemp)
     
@@ -106,7 +144,7 @@ fast_scan_changes() {
     eval "find \"$scan_dir\" -type f $exclude_args" > "$temp_scan" 2>/dev/null
     
     local file_count=$(wc -l < "$temp_scan")
-    log_message "DEBUG" "Found $file_count files to check"
+    log_message "DEBUG" "Found $file_count files to check" >&2
     
     # OPTIMIZATION 2: Batch process files to reduce system calls
     > "$output_file"  # Clear output file
@@ -144,7 +182,7 @@ fast_scan_changes() {
     local end_time=$(date +%s)
     local duration=$((end_time - start_time))
     log_performance "$operation_name" "$duration" "$changed_count"
-    log_message "INFO" "Fast scan completed: $changed_count changed files in ${duration}s"
+    log_message "INFO" "Fast scan completed: $changed_count changed files in ${duration}s" >&2
     
     echo "$changed_count"
 }
@@ -189,7 +227,7 @@ fast_check_conflicts() {
     local conflicts_file="$3"
     
     local start_time=$(date +%s)
-    log_message "DEBUG" "Starting fast conflict detection"
+    log_message "DEBUG" "Starting fast conflict detection" >&2
     
     > "$conflicts_file"  # Clear conflicts file
     local conflict_count=0
@@ -237,7 +275,7 @@ fast_check_conflicts() {
     local end_time=$(date +%s)
     local duration=$((end_time - start_time))
     log_performance "conflict_detection" "$duration" "$conflict_count"
-    log_message "DEBUG" "Fast conflict detection completed: $conflict_count conflicts in ${duration}s"
+    log_message "DEBUG" "Fast conflict detection completed: $conflict_count conflicts in ${duration}s" >&2
     
     return $conflict_count
 }
@@ -474,8 +512,8 @@ fi
 # Perform optimized bidirectional sync
 if [ "$QUICK_CHECK_ONLY" = true ]; then
     # Quick mode - just detect changes, don't sync
-    local wsl_changes="$CHANGE_CACHE_DIR/wsl_changes.list"
-    local wsl_changed_count=$(fast_scan_changes "$WSL_PROJECTS_DIR" "$WSL_STATE_DB" "$wsl_changes" "quick_wsl_scan")
+    wsl_changes="$CHANGE_CACHE_DIR/wsl_changes.list"
+    wsl_changed_count=$(fast_scan_changes "$WSL_PROJECTS_DIR" "$WSL_STATE_DB" "$wsl_changes" "quick_wsl_scan")
     log_message "INFO" "Quick scan result: $wsl_changed_count changes detected"
 else
     # Full optimized sync

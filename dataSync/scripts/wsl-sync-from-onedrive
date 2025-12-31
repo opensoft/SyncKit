@@ -5,10 +5,10 @@
 
 # Source configuration
 CONFIG_FILE=""
-if [ -f "/etc/wsl-sync/config" ]; then
-    CONFIG_FILE="/etc/wsl-sync/config"
-elif [ -f "$HOME/.config/wsl-sync/config" ]; then
-    CONFIG_FILE="$HOME/.config/wsl-sync/config"
+if [ -f "/etc/SyncKit/config" ]; then
+    CONFIG_FILE="/etc/SyncKit/config"
+elif [ -f "$HOME/.config/SyncKit/config" ]; then
+    CONFIG_FILE="$HOME/.config/SyncKit/config"
 else
     echo "Error: Configuration file not found"
     exit 1
